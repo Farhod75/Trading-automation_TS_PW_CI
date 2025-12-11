@@ -1,0 +1,4 @@
+.abacus.donotdelete
+playwright-report/
+test-results/
+src/results/

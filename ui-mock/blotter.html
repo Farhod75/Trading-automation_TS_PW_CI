@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Order Blotter</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    nav a { margin-right: 10px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #007bff; color: white; }
+    button { margin-right: 5px; padding: 4px 8px; }
+    .loading { text-align: center; padding: 20px; color: #666; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="login.html">Login</a>
+    <a href="order-ticket.html">Order Ticket</a>
+    <a href="blotter.html">Blotter</a>
+  </nav>
+
+  <h1>Order Blotter</h1>
+
+  <div id="loading-indicator" class="loading">Loading orders...</div>
+
+  <table id="blotter-table">
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Instrument</th>
+        <th>Side</th>
+        <th>Quantity</th>
+        <th>Price</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="blotter-body">
+      <!-- Orders will be inserted here -->
+    </tbody>
+  </table>
+
+  <script>
+    const API_BASE = 'http://localhost:8000';
+    let ordersLoaded = false;
+
+    async function loadOrders() {
+      const loadingIndicator = document.getElementById('loading-indicator');
+      try {
+        const resp = await fetch(API_BASE + '/api/orders');
+        if (!resp.ok) {
+          console.error('Failed to load orders:', resp.status);
+          loadingIndicator.textContent = 'Failed to load orders';
+          return;
+        }
+        const orders = await resp.json();
+        console.log('Loaded orders:', orders);
+        ordersLoaded = true;
+        loadingIndicator.style.display = 'none';
+        renderOrders(orders);
+      } catch (err) {
+        console.error('Error loading orders:', err);
+        loadingIndicator.textContent = 'Error loading orders';
+      }
+    }
+
+    function renderOrders(orders) {
+      const tbody = document.getElementById('blotter-body');
+      tbody.innerHTML = '';
+      tbody.setAttribute('data-loaded', 'true');
+
+      if (!orders || orders.length === 0) {
+        const row = tbody.insertRow();
+        const cell = row.insertCell();
+        cell.colSpan = 7;
+        cell.textContent = 'No orders found';
+        cell.style.textAlign = 'center';
+        return;
+      }
+
+      orders.forEach(order => {
+        const row = tbody.insertRow();
+        row.insertCell().textContent = order.order_id;
+        row.insertCell().textContent = order.instrument;
+        row.insertCell().textContent = order.side;
+        row.insertCell().textContent = order.quantity;
+        row.insertCell().textContent = order.price;
+
+        const statusCell = row.insertCell();
+        statusCell.textContent = order.status;
+        statusCell.className = `status-${order.order_id}`;
+
+        const actionsCell = row.insertCell();
+
+        const routeBtn = document.createElement('button');
+        routeBtn.textContent = 'Route';
+        routeBtn.className = 'route-btn';
+        routeBtn.setAttribute('data-order-id', order.order_id);
+        routeBtn.onclick = () => updateStatus(order.order_id, 'ROUTED');
+        actionsCell.appendChild(routeBtn);
+
+        const fillBtn = document.createElement('button');
+        fillBtn.textContent = 'Fill';
+        fillBtn.className = 'fill-btn';
+        fillBtn.setAttribute('data-order-id', order.order_id);
+        fillBtn.onclick = () => updateStatus(order.order_id, 'FILLED');
+        actionsCell.appendChild(fillBtn);
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.className = 'cancel-btn';
+        cancelBtn.setAttribute('data-order-id', order.order_id);
+        cancelBtn.onclick = () => updateStatus(order.order_id, 'CANCELLED');
+        actionsCell.appendChild(cancelBtn);
+      });
+    }
+
+    async function updateStatus(orderId, newStatus) {
+      try {
+        const resp = await fetch(API_BASE + `/api/orders/${orderId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        if (!resp.ok) {
+          console.error('Failed to update order status:', resp.status);
+          return;
+        }
+
+        const updated = await resp.json();
+        console.log('Updated order:', updated);
+
+        // Update the status cell in the UI
+        const statusCell = document.querySelector(`.status-${orderId}`);
+        if (statusCell) {
+          statusCell.textContent = updated.status;
+        }
+      } catch (err) {
+        console.error('Error updating order status:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadOrders();
+    });
+  </script>
+</body>
+</html>

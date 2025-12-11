@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Order Ticket</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    nav a { margin-right: 10px; }
+    .error { color: red; display: none; }
+    .success { color: green; display: none; }
+    label { display: block; margin-top: 10px; }
+    input, select { padding: 4px; margin-top: 4px; }
+    .side-group { margin-top: 10px; }
+    .side-group label { display: inline-block; margin-right: 10px; }
+    button { margin-top: 15px; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="login.html">Login</a>
+    <a href="order-ticket.html">Order Ticket</a>
+    <a href="blotter.html">Blotter</a>
+  </nav>
+
+  <h1>Order Ticket</h1>
+
+  <p id="successMsg" class="success"></p>
+  <p id="errorMsg" class="error"></p>
+
+  <form id="order-form">
+    <label for="instrument">Instrument</label>
+    <select id="instrument" name="instrument">
+      <option value="">-- Select --</option>
+      <option value="BOND_US10Y">US 10Y Bond</option>
+      <option value="SWAP_USD_5Y">USD 5Y Swap</option>
+      <option value="OPTION_SPX_CALL">SPX Call Option</option>
+    </select>
+
+    <div class="side-group">
+      <span>Side:</span>
+      <label>
+        <input id="sideBuy" type="radio" name="side" value="BUY" />
+        Buy
+      </label>
+      <label>
+        <input id="sideSell" type="radio" name="side" value="SELL" />
+        Sell
+      </label>
+    </div>
+
+    <label for="quantity">Quantity</label>
+    <input id="quantity" name="quantity" type="number" min="1" />
+
+    <label for="price">Price</label>
+    <input id="price" name="price" type="number" step="0.01" min="0" />
+
+    <button type="submit">Submit Order</button>
+  </form>
+
+  <script>
+    const API_BASE = 'http://localhost:8000';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('order-form');
+      const instrument = document.getElementById('instrument');
+      const quantity = document.getElementById('quantity');
+      const price = document.getElementById('price');
+      const successMsg = document.getElementById('successMsg');
+      const errorMsg = document.getElementById('errorMsg');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        successMsg.style.display = 'none';
+        errorMsg.style.display = 'none';
+        successMsg.textContent = '';
+        errorMsg.textContent = '';
+        successMsg.removeAttribute('data-order-id');
+
+        const sideInput = form.querySelector('input[name="side"]:checked');
+        if (!instrument.value || !sideInput || !quantity.value || !price.value) {
+          errorMsg.textContent = 'All fields are required';
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        const payload = {
+          instrument: instrument.value,
+          side: sideInput.value,
+          quantity: parseInt(quantity.value, 10),
+          price: parseFloat(price.value)
+        };
+
+        try {
+          const resp = await fetch(API_BASE + '/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!resp.ok) {
+            let msg = 'Network or server error submitting order';
+            try {
+              const err = await resp.json();
+              if (err && err.detail) {
+                msg = Array.isArray(err.detail)
+                  ? err.detail.map(d => d.msg || d).join(', ')
+                  : err.detail;
+              }
+            } catch (_) {}
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+            return;
+          }
+
+          const order = await resp.json();
+          console.log('Create order response JSON:', order);
+
+          let oid = null;
+          if (order && typeof order === 'object') {
+            if (typeof order.order_id === 'string') {
+              oid = order.order_id;
+            } else if (typeof order.orderId === 'string') {
+              oid = order.orderId;
+            } else if (typeof order.id === 'string') {
+              oid = order.id;
+            }
+          }
+
+          if (!oid) {
+            errorMsg.textContent = 'Order created but no order_id returned from server';
+            errorMsg.style.display = 'block';
+            return;
+          }
+
+          successMsg.dataset.orderId = oid;
+          successMsg.textContent = `Order created: ${oid} (${order.status || 'NEW'})`;
+          successMsg.style.display = 'block';
+        } catch (err) {
+          console.error('Error submitting order', err);
+          errorMsg.textContent = 'Network or server error submitting order';
+          errorMsg.style.display = 'block';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "name": "trading-automation-ts-pw",
+  "version": "1.0.0",
+  "description": "End-to-end Playwright TypeScript automation framework for a mock trading application (OMS, ECN, Blotter, Middle Office, Settlements)",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:api": "playwright test tests/api",
+    "test:e2e": "playwright test tests/e2e",
+    "report": "playwright show-report"
+  },
+  "keywords": [
+    "playwright",
+    "typescript",
+    "trading",
+    "automation",
+    "e2e",
+    "api",
+    "oms",
+    "blotter"
+  ],
+  "author": "Farhod Elbekov",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.10.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1"
+  }
+}

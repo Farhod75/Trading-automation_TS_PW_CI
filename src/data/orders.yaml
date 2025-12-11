@@ -1,0 +1,49 @@
+orders:
+  - id: bond_buy
+    description: "Buy 1000 US 10Y bond @ 99.50"
+    instrument: "BOND_US10Y"
+    side: "BUY"
+    quantity: "1000"
+    price: "99.50"
+    expectedStatus: "FILLED"
+
+  - id: bond_sell
+    description: "Sell 500 US 10Y bond @ 100.10"
+    instrument: "BOND_US10Y"
+    side: "SELL"
+    quantity: "500"
+    price: "100.10"
+    expectedStatus: "FILLED"
+
+  - id: swap_buy
+    description: "Buy 1m notional USD 5Y IRS @ 2.15"
+    instrument: "SWAP_USD_5Y"       # CHANGED
+    side: "BUY"
+    quantity: "1000000"
+    price: "2.15"
+    expectedStatus: "FILLED"
+
+  - id: option_buy
+    description: "Buy 10 SPX call options @ 25.00"
+    instrument: "OPTION_SPX_CALL"   # CHANGED
+    side: "BUY"
+    quantity: "10"
+    price: "25.00"
+    expectedStatus: "FILLED"
+
+negativeOrders:
+  - id: missing_price
+    description: "Order with missing price"
+    instrument: "BOND_US10Y"
+    side: "BUY"
+    quantity: "1000"
+    price: ""
+    expectedError: true
+
+  - id: missing_instrument
+    description: "Order with missing instrument"
+    instrument: ""
+    side: "BUY"
+    quantity: "1000"
+    price: "99.50"
+    expectedError: true
