@@ -43,6 +43,19 @@ export class OrderTicketPage {
     await this.page.click(this.submitButton);
   }
 
+  // Alias methods for test compatibility
+  async enterQuantity(quantity: string) {
+    await this.fillQuantity(quantity);
+  }
+
+  async enterPrice(price: string) {
+    await this.fillPrice(price);
+  }
+
+  async submitOrder() {
+    await this.submit();
+  }
+
   async placeOrder(
     instrument: string,
     side: 'BUY' | 'SELL',
@@ -98,5 +111,10 @@ export class OrderTicketPage {
     await error.waitFor({ state: 'hidden', timeout: 1000 }).catch(() => {
       // ignore; test will still validate success message and blotter behavior
     });
+  }
+
+  // Alias method for test compatibility
+  async assertErrorVisible(expected?: string) {
+    await this.assertErrorMessageVisible(expected);
   }
 }
