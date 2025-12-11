@@ -18,7 +18,7 @@ jobs:
       - name: Install Python dependencies (FastAPI backend)
         run: |
           python -m pip install --upgrade pip
-          pip install fastapi uvicorn sqlalchemy pymysql python-dotenv
+          pip install -r requirements.txt
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -33,7 +33,9 @@ jobs:
 
       - name: Start FastAPI backend
         run: |
-          nohup uvicorn trading-api-python.app.main:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
+          cd trading-api-python
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > ../backend.log 2>&1 &
+          cd ..
           sleep 5
           curl -f http://localhost:8000/ || (echo "Backend not responding" && cat backend.log && exit 1)
 

@@ -11,7 +11,8 @@
     "test:smoke": "playwright test --grep @smoke",
     "test:api": "playwright test tests/api",
     "test:e2e": "playwright test tests/e2e",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "serve:ui": "npx http-server ui-mock -p 3000 --cors"
   },
   "keywords": [
     "playwright",
