@@ -1,0 +1,58 @@
+name: Trading App CI
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies (FastAPI backend)
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi uvicorn sqlalchemy pymysql python-dotenv
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Start FastAPI backend
+        run: |
+          nohup uvicorn trading-api-python.app.main:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
+          sleep 5
+          curl -f http://localhost:8000/ || (echo "Backend not responding" && cat backend.log && exit 1)
+
+      - name: Start UI static server on port 3000
+        run: |
+          nohup npm run serve:ui > ui.log 2>&1 &
+          sleep 5
+          curl -f http://localhost:3000/order-ticket.html || (echo "UI server not responding" && cat ui.log && exit 1)
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - name: Upload logs and Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts
+          path: |
+            backend.log
+            ui.log
+            playwright-report/
+          retention-days: 30
